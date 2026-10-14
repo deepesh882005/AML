@@ -1,0 +1,30 @@
+import pandas as pd
+import numpy as np
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import GridSearchCV , validation_curve
+import matplotlib.pyplot as plt
+
+data=pd.read_csv(r"https://gist.githubusercontent.com/curran/a08a1080b88344b0c8a7/raw/0e7a9b0a5d22642a06d3d5b9bcbad9890c8ee534/iris.csv")
+X=data.drop(columns=['species'])
+Y=data['species']
+param_grid={
+    "max_depth":[None,2,3,4,5,6,7,8],
+    "min_samples_split":[2,4,6,8,10]
+}
+
+dt=DecisionTreeClassifier()
+grid_search=GridSearchCV(estimator=dt,param_grid=param_grid,cv=5)
+grid_search.fit(X,Y)
+print("Best Parameters:",grid_search.best_params_)
+print("Best Score:",grid_search.best_score_)
+param_range=np.arange(1,16)
+train_scores,test_scores=validation_curve(DecisionTreeClassifier(min_samples_split=grid_search.best_params_["min_samples_split"]),X,Y,param_name="max_depth",param_range=param_range)
+train_mean=np.mean(train_scores,axis=1)
+test_mean=np.mean(test_scores,axis=1)
+plt.figure(figsize=(10,6))
+plt.plot(param_range,train_mean,label="Train Score")
+plt.plot(param_range,test_mean,label="Test Score")
+plt.xlabel("Max Depth")
+plt.ylabel("Accuracy")
+plt.legend()
+plt.show()
