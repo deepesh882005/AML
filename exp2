@@ -1,0 +1,55 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler,LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score,confusion_matrix,classification_report
+import time
+
+iris=pd.read_csv(r"https://gist.githubusercontent.com/curran/a08a1080b88344b0c8a7/raw/0e7a9b0a5d22642a06d3d5b9bcbad9890c8ee534/iris.csv")
+print(iris.head())
+encoder=LabelEncoder()
+iris['species']=encoder.fit_transform(iris['species'])
+X=iris[['sepal_length','sepal_width']]
+Y=iris['species']
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=42)
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+kernels=["linear","poly","rbf"]
+results={}
+for kernel in kernels:
+  start_time=time.time()
+  model=SVC(kernel=kernel)
+  model.fit(X_train,y_train)
+  y_pred=model.predict(X_test)
+  accuracy=accuracy_score(y_test,y_pred)
+  train_time=time.time()-start_time
+  results[kernel]={
+      'model':model,
+      'train_time':train_time,
+      'accuracy':accuracy
+  }
+  print("\n"+"-"*40)
+  print(f"Kernel: {kernel}")
+  print(f"Train Time: {train_time:.2f} seconds")
+  print(f"Accuracy: {accuracy:.2f}")
+  print("Confusion Matrix")
+  print(confusion_matrix(y_test,y_pred))
+def plot_decision_boundry(x,y,model,title):
+  n=0.02
+  x_min=x[:,0].min()-1
+  x_max=x[:,0].max()+1
+  y_min=x[:,1].min()-1
+  y_max=x[:,1].max()+1
+  xx,yy=np.meshgrid(np.arange(x_min,x_max,n),np.arange(y_min,y_max,n))
+  z=model.predict(np.c_[xx.ravel(),yy.ravel()]).reshape(xx.shape)
+  plt.figure(figsize=(10,6))
+  plt.contourf(xx,yy,z,alpha=0.4)
+  plt.scatter(x[:,0],x[:,1],c=y)
+  plt.title(title)
+  plt.xlabel("Feature 1")
+  plt.ylabel("Feature 2")
+  plt.show()
+plot_decision_boundry(X_train, y_train, model, f"SVM Decision Boundary ({kernel} kernel)")
